@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>WebRTC Camera Test</title>
+  <title>WebRTC PPE Stream</title>
 </head>
 <body>
-  <h1>WebRTC Live Camera (Windows Test)</h1>
+  <h1>Replisense PPE Stream (WebRTC)</h1>
   <video id="video" autoplay playsinline controls
          style="width:640px; height:480px; background:#000;"></video>
 
@@ -14,21 +14,19 @@
     let pc = null;
 
     async function start() {
-      // 1) Create a peer connection
       pc = new RTCPeerConnection();
 
-      // 2) When a remote track arrives, attach it to our <video>
-      pc.ontrack = (event) => {
+      pc.ontrack = event => {
         if (event.track.kind === 'video') {
           videoElem.srcObject = event.streams[0];
         }
       };
 
-      // 3) Create an SDP offer, specifying we want video
+      // 1) Create an SDP offer requesting video
       const offer = await pc.createOffer({ offerToReceiveVideo: true });
       await pc.setLocalDescription(offer);
 
-      // 4) POST the SDP offer to /offer
+      // 2) POST the offer to the Python server
       const response = await fetch('/offer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,7 +37,7 @@
       });
       const answer = await response.json();
 
-      // 5) Set the remote description
+      // 3) Apply the SDP answer
       await pc.setRemoteDescription(answer);
     }
 
