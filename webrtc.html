@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WebRTC Camera Test</title>
+</head>
+<body>
+  <h1>WebRTC Live Camera (Windows Test)</h1>
+  <video id="video" autoplay playsinline controls
+         style="width:640px; height:480px; background:#000;"></video>
+
+  <script>
+    const videoElem = document.getElementById('video');
+    let pc = null;
+
+    async function start() {
+      // 1) Create a peer connection
+      pc = new RTCPeerConnection();
+
+      // 2) When a remote track arrives, attach it to our <video>
+      pc.ontrack = (event) => {
+        if (event.track.kind === 'video') {
+          videoElem.srcObject = event.streams[0];
+        }
+      };
+
+      // 3) Create an SDP offer, specifying we want video
+      const offer = await pc.createOffer({ offerToReceiveVideo: true });
+      await pc.setLocalDescription(offer);
+
+      // 4) POST the SDP offer to /offer
+      const response = await fetch('/offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sdp: pc.localDescription.sdp,
+          type: pc.localDescription.type
+        })
+      });
+      const answer = await response.json();
+
+      // 5) Set the remote description
+      await pc.setRemoteDescription(answer);
+    }
+
+    start().catch(console.error);
+  </script>
+</body>
+</html>
